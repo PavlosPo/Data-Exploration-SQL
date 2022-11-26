@@ -1,49 +1,37 @@
---SELECT *
---FROM PortfolioProject..CovidDeaths
---order by 3, 4
-
---SELECT *
---FROM PortfolioProject..CovidVaccinations
---order by 3, 4
-
+-- Datasets: 1. CovidDeaths
+-- 	     2. CovidVaccinations
 
 -- Select Data that we are going to be using
-
 SELECT continent, MAX(total_cases) As TotalCases, MAX(total_deaths) As TotalDeaths, MAX(Population) As Population
 FROM PortfolioProject..CovidDeaths
-WHERE continent IS NOT Null
+WHERE continent IS NOT Null -- Exclude the continents
 GROUP BY continent
 
 
 -- LOOKING AT:  Total Cases vs. Population
-	-- Shows the likelihood of dying if you contract covid in Greece
-
+-- Shows the likelihood of dying if you contract covid in Greece
 SELECT continent, MAX(total_cases) as TotalCases, MAX(total_deaths) as TotalDeaths,  (Max(total_deaths) / CAST(MAX(total_cases) as float)) * 100 As DeathPercentage 
 FROM PortfolioProject..CovidDeaths
 WHERE continent IS NOT NULL
 GROUP BY continent
 
 
-
 -- LOOKING AT: Total Cases vs. Population 
-	-- Shows what percentage of population got Covid
-SELECT continent, Max(total_cases) As TotalCases, MAX(total_deaths) As TotalDeaths, MAX(Population) As Population, 
-	ROUND((CAST(MAX(total_cases) As Float) / CAST(MAX(Population) as float))*100, 2) As PercentagePopulationInfected
+-- Shows what percentage of population got Covid
+SELECT continent, Max(total_cases) As TotalCases, MAX(total_deaths) As TotalDeaths, MAX(Population) As Population
+,	ROUND((CAST(MAX(total_cases) As Float) / CAST(MAX(Population) as float))*100, 2) As PercentagePopulationInfected
 FROM PortfolioProject..CovidDeaths
 WHERE continent IS NOT Null
 GROUP BY continent
 
 
 -- LOOKING AT: Countries with Highest Infection Rate compared to Population
-SELECT Location, Population, MAX(total_cases) As HighestInfectionCount,  MAX(((CAST(total_cases As Float)/CAST(Population as float))*100)) As PercentPopulationInfected
+SELECT Location, Population, MAX(total_cases) As HighestInfectionCount
+,  MAX(((CAST(total_cases As Float)/CAST(Population as float))*100)) As PercentPopulationInfected
 FROM PortfolioProject..CovidDeaths
 WHERE continent IS NOT Null 
 GROUP BY Location, Population
---HAVING HighestInfectionCount = NULL --Clears some data
 ORDER BY PercentPopulationInfected, HighestInfectionCount DESC
-
-
-
 
 
 -- LOOKING AT: Countries with Highest Death Count per Population
@@ -57,12 +45,14 @@ ORDER BY TotalDeathCount DESC
 
 
 -- LET'S BREAK THINGS DOWN BY CONTINENT
+
 -- LOOKING AT: Showing continents with the highest DeathCount
 SELECT continent, MAX(cast(total_deaths as int)) as TotalDeathCount
 FROM PortfolioProject.dbo.CovidDeaths
 WHERE continent IS NOT NULL 
 GROUP BY continent
 ORDER BY TotalDeathCount DESC
+
 
 -- GLOBAL NUMBERS
 -- (PerDay)
@@ -84,8 +74,7 @@ ORDER BY 2, 3
 
 
 -- USE CTE 
-
-With PopvsVac (Continent, Location, Date, Population, New_Vaccinations, RollingPeopleVaccinated)
+WITH PopvsVac (Continent, Location, Date, Population, New_Vaccinations, RollingPeopleVaccinated)
 AS (
 Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 , SUM(CAST(vac.new_vaccinations AS float)) OVER (PARTITION BY dea.Location ORDER BY dea.location, dea.date) As VaccinatedTillThen
@@ -95,8 +84,9 @@ JOIN PortfolioProject.dbo.CovidVaccinations vac
 	and dea.date = vac.date 
 WHERE dea.continent IS NOT NULL -- Doesn't count continents but only countries.
 		)
-
-SELECT *, ROUND((RollingPeopleVaccinated/CAST(Population as float))*100,4) PercentVaccinatedTillThen
+-- Percentage of total people Vaccinated till the date that appears. 
+SELECT *
+, ROUND((RollingPeopleVaccinated/CAST(Population as float))*100,4) PercentVaccinatedTillThen
 FROM PopvsVac
 ORDER BY Continent, Location, Date
 
@@ -124,7 +114,7 @@ WHERE dea.continent IS NOT NULL -- Doesn't count continents but only countries.
 
 SELECT *
 FROM #PercentPopulationVaccinated
-WHERE RollingPeopleVaccinated <> 0
+WHERE RollingPeopleVaccinated <> 0 -- Just to glimpse only the data that the vaccinations happend.
 
 
 
@@ -136,7 +126,7 @@ FROM PortfolioProject.dbo.CovidDeaths dea
 JOIN PortfolioProject.dbo.CovidVaccinations vac
 	ON dea.location = vac.location 
 	and dea.date = vac.date 
-WHERE dea.continent IS NOT NULL -- Doesn't count continents but only countries.
+WHERE dea.continent IS NOT NULL -- Doesn't include continents at the results but only countries.
 
 
 
