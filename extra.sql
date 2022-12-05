@@ -1,93 +1,34 @@
-SELECT continent, new_deaths As DeathsThatDay, new_cases ,date
-FROM PortfolioProject.dbo.CovidDeaths
-WHERE continent IS NOT NULL 
-GROUP BY continent, new_deaths, new_cases, date
-ORDER BY new_deaths DESC
+-- Continents View
+SELECT iso_code, location, population, SUM(new_deaths) As Deaths
+FROM PortfolioProject.dbo.owid_covid_data ocd 
+WHERE ocd.iso_code LIKE 'OWID_%'
+GROUP BY iso_code, location, population
+ORDER BY Deaths DESC
 
 
--- who had the most deaths in a day.
-SELECT location , max(new_deaths) maxDeaths
-FROM PortfolioProject.dbo.CovidDeaths
-WHERE continent is not null
-GROUP BY location
-ORDER BY MAX(new_deaths) DESC
-
--- Are the Positive rate correlated with the Deaths?
-SELECT location ,AVG(CAST(positive_rate as float)), MAX(CAST(positive_rate as float)), COUNT(CAST(positive_rate as float))
-FROM PortfolioProject.dbo.CovidVaccinations
-GROUP BY location
-ORDER BY COUNT(CAST(positive_rate as float)) DESC
-
--- Create Bed and Deaths temp table? 
-
---Create beds
-DROP TABLE IF EXISTS #beds
-CREATE  TABLE  #beds (location varchar(50), BedPT float)
-INSERT INTO #beds
-SELECT cd.location, MAX(hospital_beds_per_thousand) BedsPT
-FROM PortfolioProject.dbo.CovidVaccinations cv
-INNER JOIN PortfolioProject.dbo.CovidDeaths cd
-	ON cv.location = cd.location 
-WHERE cd.location <> 'OWID'
-GROUP BY cd.location, hospital_beds_per_thousand  
+-- Death Per Million to correlate high-low income Deaths.
+-- Found that High income Countries have more Deaths Per million opposed to Low Income.
+SELECT 
+	iso_code,
+	location,
+	SUM(new_deaths) As Deaths,
+	MAX(total_deaths_per_million) As Max_DeathsPerMillion,
+	AVG(total_deaths_per_million) As AVG_DeathsPerMillion
+FROM PortfolioProject.dbo.owid_covid_data ocd 
+WHERE ocd.iso_code LIKE 'OWID_%' AND location IN (
+										'High income', 
+										'Upper middle income',
+										'Lower middle income')
+GROUP BY iso_code, location
+ORDER BY Deaths DESC
+ 
 
 
---Create deaths
-DROP TABLE IF EXISTS #deaths
-CREATE TABLE #deaths (location varchar(50), TotalDeaths int)
-INSERT INTO #deaths
-SELECT location, sum(new_deaths) as TotalDeaths
-FROM PortfolioProject.dbo.CovidDeaths 
-GROUP BY location
 
--- Create info
-DROP TABLE IF EXISTS PortfolioProject.dbo.info
-CREATE TABLE  PortfolioProject.dbo.info (	
-				location varchar(50),  	
-				diabetes_prevalence	real,
-				cardiovasc_death_rate real,
-				extreme_poverty varchar)
-INSERT INTO PortfolioProject.dbo.info
-SELECT location, sum(new_deaths) as TotalDeaths
-FROM PortfolioProject.dbo.CovidDeaths cd
-INNER JOIN PortfolioProject.dbo.CovidVaccinations cv 
-	ON cd.location = cd.location 
-GROUP BY location
+-- Question: How many days were borders in closure on high-middle and low income countries?
 
 
 -- Taking Data!
- -- ! TO DO : Create a table to export location, deathTotal, death rate, BedsPerThousands. WITHOUT THE 'OWID'
-DROP TABLE IF EXISTS PortfolioProject.dbo.DataToExport
-CREATE TABLE PortfolioProject.dbo.DataToExport ( location varChar(50), BedsPerThousand float, TotalDeaths int, )
-INSERT INTO PortfolioProject.dbo.DataToExport
-SELECT bd.location, bd.BedPT, db.TotalDeaths
-FROM dbo.#beds bd
-INNER JOIN dbo.#deaths db
-	ON db.location = bd.location
-INNER JOIN (SELECT iso_code, location 
-			FROM PortfolioProject.dbo.CovidDeaths 
-			) cd
-	ON cd.location = db.location
-WHERE cd.iso_code  <> 'OWID'
-ORDER BY BedPT  DESC, TotalDeaths ASC
-
-SELECT location, BedsPerThousand, TotalDeaths 
-FROM PortfolioProject.dbo.DataToExport dte 
-GROUP BY location , BedsPerThousand , TotalDeaths 
-
-
-
-
-
-
-
--- Death rate per country
-SELECT location , MAX(CAST(population as float)) Population,
-			SUM(CAST(new_deaths as int)) TotalDeaths, SUM(CAST(new_cases as int)) TotalCases, 
-			SUM(CAST(new_deaths as float)) / SUM(CAST(new_cases as float)) DeathRate
-FROM PortfolioProject.dbo.CovidDeaths
-WHERE iso_code <> 'OWID'
-GROUP BY location
-ORDER BY DeathRate DESC
+ 
 
 
