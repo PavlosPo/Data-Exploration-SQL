@@ -6,7 +6,7 @@ This is a data analysis of the covid dataset from the beginning till today, prov
 
 *********************************************
 
-projects.sql:
+project.sql:
 
 The DataSet used is https://ourworldindata.org/covid-deaths here. Although some changes have been done to the file for better organization which information is in which table.
 There are two tables 1. CovidDeaths table which contains the nescessary information to extract information about deaths
