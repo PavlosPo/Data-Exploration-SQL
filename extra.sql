@@ -19,6 +19,8 @@ GROUP BY location
 ORDER BY COUNT(CAST(positive_rate as float)) DESC
 
 -- Create Bed and Deaths temp table? 
+
+--Create beds
 DROP TABLE IF EXISTS #beds
 CREATE  TABLE  #beds (location varchar(50), BedPT float)
 INSERT INTO #beds
@@ -30,20 +32,33 @@ WHERE cd.location <> 'OWID'
 GROUP BY cd.location, hospital_beds_per_thousand  
 
 
-
+--Create deaths
 DROP TABLE IF EXISTS #deaths
-
-
 CREATE TABLE #deaths (location varchar(50), TotalDeaths int)
 INSERT INTO #deaths
 SELECT location, sum(new_deaths) as TotalDeaths
 FROM PortfolioProject.dbo.CovidDeaths 
 GROUP BY location
 
+-- Create info
+DROP TABLE IF EXISTS PortfolioProject.dbo.info
+CREATE TABLE  PortfolioProject.dbo.info (	
+				location varchar(50),  	
+				diabetes_prevalence	real,
+				cardiovasc_death_rate real,
+				extreme_poverty varchar)
+INSERT INTO PortfolioProject.dbo.info
+SELECT location, sum(new_deaths) as TotalDeaths
+FROM PortfolioProject.dbo.CovidDeaths cd
+INNER JOIN PortfolioProject.dbo.CovidVaccinations cv 
+	ON cd.location = cd.location 
+GROUP BY location
+
+
 -- Taking Data!
  -- ! TO DO : Create a table to export location, deathTotal, death rate, BedsPerThousands. WITHOUT THE 'OWID'
 DROP TABLE IF EXISTS PortfolioProject.dbo.DataToExport
-CREATE TABLE PortfolioProject.dbo.DataToExport ( location varChar(50), BedsPerThousand float, TotalDeaths int)
+CREATE TABLE PortfolioProject.dbo.DataToExport ( location varChar(50), BedsPerThousand float, TotalDeaths int, )
 INSERT INTO PortfolioProject.dbo.DataToExport
 SELECT bd.location, bd.BedPT, db.TotalDeaths
 FROM dbo.#beds bd
