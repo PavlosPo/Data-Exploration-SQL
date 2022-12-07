@@ -25,7 +25,7 @@ WHERE ocd.iso_code LIKE 'OWID_%' OR location IN (
 GROUP BY iso_code, location, aged_65_older 
 ORDER BY AVG_DeathsPerMillion DESC
  
-
+-- Country and Finance
 SELECT 
 	location,
 	gdp_per_capita as GDP,
@@ -37,6 +37,24 @@ FROM PortfolioProject.dbo.owid_covid_data ocd
 WHERE continent NOT LIKE ''
 GROUP BY location, gdp_per_capita, extreme_poverty 
 ORDER BY CAST(extreme_poverty as float) DESC
+
+-- Country, COUNT the day of restrictions happened.
+SELECT 
+	location,
+	COUNT([Date]) as DaysInRestrictions
+FROM PortfolioProject.dbo.international_travel_covid itc 
+GROUP BY location
+
+
+
+
+
+
+
+
+
+
+
 
 ------------------------------------------------------------------------------------------------
 -- Question: Policy played role? argument variable: stringency_index
