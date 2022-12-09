@@ -47,7 +47,7 @@ CREATE TABLE #restrict_table(
 						DaysInRestrictions int
 						)
 
-INSERT INTO  #restrict_table
+INSERT INTO  #restrict_table  -- Table for Restriction Info
 SELECT 
 	ocd.location,
 	itc.international_travel_controls As RestrictionPower,
@@ -76,7 +76,7 @@ CREATE TABLE #info_table (
 				)
 				
 
-INSERT INTO #info_table
+INSERT INTO #info_table  -- Table for many variables of covid-19
 SELECT 
 	location, 
 	MAX(total_deaths) as TotalDeaths,
@@ -124,8 +124,16 @@ GROUP BY location, gdp_per_capita
 -- 3.Question: How many days were borders in closure on high-middle and low income countries?
 ------------------------------------------------------------------------------------------------
 
-
-
+SELECT 
+	ocd.location,
+	rt.RestrictPower,
+	rt.DaysInRestrictions 
+FROM owid_covid_data ocd
+RIGHT JOIN #restrict_table rt
+	ON rt.location = ocd.location
+WHERE ocd.location IN ('Low income')
+GROUP BY ocd.location, rt.RestrictPower, rt.DaysInRestrictions 
+ --- TODO! Use the INCOME_Per_Country_Class.xlsx file to cross the data.
 
 ------------------------------------------------------------------------------------------------
 -- Taking Data!
@@ -140,4 +148,6 @@ ORDER BY location, RestrictPower ASC
 -- Taking the info_table Data
 SELECT *
 FROM #info_table
+
+
 
