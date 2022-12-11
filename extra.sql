@@ -125,27 +125,32 @@ GROUP BY location, gdp_per_capita
 -- 3.Question: How many days were borders in closure on high-middle and low income countries?
 ------------------------------------------------------------------------------------------------
 
--- CTE for Income Category per country
-WITH table_income as (	SELECT 
-							ocd.location,
-							ocd.Income
-						FROM PortfolioProject.dbo.owid_covid_data ocd 
-						WHERE Income <> '' OR Income <> NULL 
-						GROUP BY location, Income )
+DROP TABLE IF EXISTS table_income 
+CREATE TABLE table_income (
+							location varchar(50),
+							RestrictPower int,
+							DaysInRestriction int,
+							income varchar(50))
 
-						
-						
--- !Run Above Querie Also! -- 
--- Taking RestrictPower, Days and Income of each Country
+							
+INSERT INTO table_income 
+-- CTE : Restrict Power/Days Per Country/Income
 SELECT 
-	rd.location,
-	rd.RestrictPower, 
-	rd.DaysInRestrictions, 
+	ti.location,
+	rd.RestrictPower ,
+	rd.DaysInRestrictions,
 	ti.Income
 FROM restrict_table rd
-INNER JOIN table_income ti 
-	ON rd.location = ti.location
-ORDER BY rd.location, RestrictPower ASC
+INNER JOIN	(SELECT 
+				ocd.location,
+				ocd.Income
+			FROM PortfolioProject.dbo.owid_covid_data ocd 
+			WHERE Income <> '' OR Income <> NULL 
+			GROUP BY location, Income 
+			) as ti 
+ON rd.location = ti.location
+GROUP BY ti.location, rd.RestrictPower ,rd.DaysInRestrictions , ti.Income
+ORDER BY ti.location, rd.RestrictPower ASC
 
 
 
@@ -156,14 +161,16 @@ ORDER BY rd.location, RestrictPower ASC
 
 -- Taking the Restriction-Days Data
 SELECT *
-FROM #restrict_table
+FROM restrict_table
 ORDER BY location, RestrictPower ASC
 
 -- Taking the info_table Data
 SELECT *
-FROM #info_table
+FROM info_table
 
-
+-- Taking the RestrictPower/Days and income per country
+SELECT *
+FROM table_income  
 
 
 
