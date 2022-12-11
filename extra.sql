@@ -40,14 +40,14 @@ GROUP BY location
 
 
 -- 4.Temp Table with Restriction Power and DaysInRestrictions
-DROP TABLE IF EXISTS #restrict_table
-CREATE TABLE #restrict_table( 	
+DROP TABLE IF EXISTS restrict_table
+CREATE TABLE restrict_table( 	
 						location varchar(50),
 						RestrictPower int,
 						DaysInRestrictions int
 						)
 
-INSERT INTO  #restrict_table  -- Table for Restriction Info
+INSERT INTO  restrict_table  -- Table for Restriction Info
 SELECT 
 	ocd.location,
 	itc.international_travel_controls As RestrictionPower,
@@ -58,10 +58,11 @@ LEFT JOIN PortfolioProject.dbo.international_travel_covid itc
 GROUP BY ocd.location, itc.international_travel_controls
 ORDER BY location, RestrictionPower ASC
 
+
 -- 5.Temp Table of many Variables(Info)
 
-DROP TABLE IF EXISTS #info_table
-CREATE TABLE #info_table (
+DROP TABLE IF EXISTS info_table
+CREATE TABLE info_table (
 						location varchar(50),
 						TotalDeaths float,
 						DeathsPerMillion float,
@@ -76,7 +77,7 @@ CREATE TABLE #info_table (
 				)
 				
 
-INSERT INTO #info_table  -- Table for many variables of covid-19
+INSERT INTO info_table  -- Table for many variables of covid-19
 SELECT 
 	location, 
 	MAX(total_deaths) as TotalDeaths,
@@ -101,7 +102,7 @@ GROUP BY
 
 	
 SELECT *
-FROM #info_table
+FROM info_table
 
 
 ------------------------------------------------------------------------------------------------
@@ -124,16 +125,29 @@ GROUP BY location, gdp_per_capita
 -- 3.Question: How many days were borders in closure on high-middle and low income countries?
 ------------------------------------------------------------------------------------------------
 
+-- CTE for Income Category per country
+WITH table_income as (	SELECT 
+							ocd.location,
+							ocd.Income
+						FROM PortfolioProject.dbo.owid_covid_data ocd 
+						WHERE Income <> '' OR Income <> NULL 
+						GROUP BY location, Income )
+
+						
+						
+-- !Run Above Querie Also! -- 
+-- Taking RestrictPower, Days and Income of each Country
 SELECT 
-	ocd.location,
-	rt.RestrictPower,
-	rt.DaysInRestrictions 
-FROM owid_covid_data ocd
-RIGHT JOIN #restrict_table rt
-	ON rt.location = ocd.location
-WHERE ocd.location IN ('Low income')
-GROUP BY ocd.location, rt.RestrictPower, rt.DaysInRestrictions 
- --- TODO! Use the INCOME_Per_Country_Class.xlsx file to cross the data.
+	rd.location,
+	rd.RestrictPower, 
+	rd.DaysInRestrictions, 
+	ti.Income
+FROM restrict_table rd
+INNER JOIN table_income ti 
+	ON rd.location = ti.location
+ORDER BY rd.location, RestrictPower ASC
+
+
 
 ------------------------------------------------------------------------------------------------
 -- Taking Data!
@@ -148,6 +162,10 @@ ORDER BY location, RestrictPower ASC
 -- Taking the info_table Data
 SELECT *
 FROM #info_table
+
+
+
+
 
 
 
